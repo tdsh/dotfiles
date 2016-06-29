@@ -1,0 +1,354 @@
+# .bashrc
+
+# User specific aliases and functions
+
+alias rm='rm -i'
+alias cp='cp -i'
+alias mv='mv -i'
+alias ag='ag --pager="less -F -R"'
+#alias cat='pygmentize -O style=monokai -f console256 -g'
+
+# Source global definitions
+if [ -f /etc/bashrc ]; then
+	. /etc/bashrc
+fi
+
+# Don't source .bashrc if it's not started in a shell.
+# Needed to avoid warning in scp
+# "bind: warning: line editing not enabled"
+[ -z "$PS1" ] && return
+
+##############################################################
+# command alias
+#
+alias vi='vim'
+alias difff='diff -Nuar '
+alias ssh='TERM=xterm ssh'
+alias 3='w3m'
+
+function patchy {
+	OPT=""
+	if [ "$1" = "-t" ]; then
+		OPT="--dry-run"
+		shift 1
+	fi
+	patch -p1 $OPT < $@
+}
+
+function patchrm {
+	OPT=""
+	if [ "$1" = "-t" ]; then
+		OPT="--dry-run"
+		shift 1
+	fi
+	patch -p1 -R $OPT < $@
+}
+
+function op {
+	WHO="nobody:nobody"
+	if [ "$1" = "-t" ]; then
+		WHO="tabe:tabe"
+		shift 1
+	elif [ "$1" = "-r" ]; then
+		WHO="rslsync:rslsync"
+		shift 1
+	fi
+	IFS=$'\n'; chown -R $WHO $@
+	find $@ -type d -exec chmod 755 {} \;
+	find $@ -type f -exec chmod 644 {} \;
+}
+
+function cs {
+	starscope -e cscope
+	\rm .starscope.db
+}
+
+function edays {
+	echo "$1" | grep -Eq '[0-9]{8}'
+	if [ $? != 0 ]; then
+		echo "Usage: edays start(YYYYMMDD) end(YYYYMMDD)" 1>&2
+		return
+	fi
+	echo "$2" | grep -Eq '[0-9]{8}'
+	if [ $? != 0 ]; then
+		echo "Usage: edays start(YYYYMMDD) end(YYYYMMDD)" 1>&2
+		return
+	fi
+	echo $(( $(( $(date --date "$2" +%s) - $(date --date "$1" +%s) )) / 86400 ))
+}
+
+GPG_TTY=$(tty)
+export GPG_TTY
+
+##############################################################
+# editor settings
+#
+export EDITOR=/usr/bin/vim
+export CSCOPE_EDITOR=vim
+export SVN_EDITOR=vim
+#export PAGER=less
+
+##############################################################
+# useful tools
+#
+#export LESS='-R'
+#export LESSOPEN='| ~/lessfilter %s'
+# Chage " " to "\ "
+bs() {
+    sed -e 's/ /\\ /g' "$1"
+}
+
+##############################################################
+# CVS settings
+#
+export CVS_RSH=ssh
+# available CVSROOT for MontaVista CVS.
+#export CVSROOT=:ext:tabe@cvs.mvista.com:/cvsdev/mvl-kernel-26
+export CVSROOT=:ext:tabe@cvs.mvista.com:/cvsdev/userland
+#export CVSROOT=:ext:tabe@cvs.mvista.com:/cvsdev/toolchain
+#export CVSROOT=:ext:tabe@cvs.mvista.com:/cvsdev/mvl-kernel
+
+# Usage: cvsroot [repository name]
+function cvsroot {
+	roots="mvl-kernel-26\|userland\|toolchain\|mvl-kernel"
+	if [ "$1" = "" ];then
+		echo $CVSROOT
+		return 0
+	fi
+	if ! echo "$1" | grep -qx "$roots";then
+		echo "No CVSROOT matched."
+		return 1
+	fi
+	export CVSROOT=:ext:tabe@cvs.mvista.com:/cvsdev/$1
+}
+
+##############################################################
+# Go language
+#
+export GOPATH=$HOME/priv/go
+export PATH=$PATH:$GOPATH/bin
+function godoc() {
+	command godoc $* | less
+}
+
+##############################################################
+# Python
+#
+export VIRTUALENV_USE_DISTRIBUTE=true
+# virtualenvwrapper
+if [ -f /usr/bin/virtualenvwrapper.sh ];then
+	export WORKON_HOME=$HOME/.virtualenvs
+	source /usr/bin/virtualenvwrapper.sh
+fi
+
+##############################################################
+# docker
+#
+alias d1='docker ps -l -q'
+alias d1ip='docker inspect $(docker ps -l -q) | jq -r ".[0].NetworkSettings.IPAddress"'
+
+# http://mizzy.org/blog/2014/06/22/1/
+docker-attach() {
+	id=$(docker ps -q --no-trunc "$1")
+	root=/var/lib/docker/execdriver/native/$id
+	sh -c "cd $root && $GOPATH/bin/nsinit exec $2"
+}
+
+##############################################################
+# Chef
+#
+# Usage: my-knife [-i] distro-name
+# 	-i: Run knife solo cook for all the cookbooks, including
+#       processes that are necessary only in initial machine
+#       setup.
+my-knife() {
+	chef_dir="/root/priv/git/myproject"
+	user="tabe"
+	secrets="/root/ckey"
+	INITIALIZE=0
+	OPTIND_OLD=$OPTIND
+	OPTIND=1
+
+	while getopts "i" opts; do
+		case $opts in
+			i)
+				INITIALIZE=1
+				shift $(($OPTIND - 1))
+				;;
+			*)
+				echo "Usage: my-knife [-i] distro-name"
+				echo "-i: Run knife solo cook for all the cookbooks, including"
+				echo "    processes that are necessary only in initial machine setup."
+				return 1
+				;;
+		esac
+	done
+	OPTIND=$OPTIND_OLD
+
+	if [ -d "$chef_dir/chef-$1" ];then
+		pushd "$chef_dir/chef-$1" 1>/dev/null
+	else
+		echo "Directory not exist."
+		return 1
+	fi
+
+	nodes=($(find nodes -name "*.json" | sed -e "s@^nodes/\(.*\).json@\1@"))
+	if [ ${#nodes[*]} -ge 2 ];then
+		PS3="Which node to run knife? : "
+		echo "You have multiple json in nodes directory."
+		select choice in "${nodes[@]}"
+		do
+			node=$choice
+			if [ "$node" = "" ]; then
+				echo "Invalid choice"
+				return 1
+			fi
+			break;
+		done
+	else
+		node=${nodes[0]}
+	fi
+
+	if test "$INITIALIZE" = "1"; then
+		\cp nodes/"$node".json.init.tmpl nodes/"$node".json
+	else
+		\cp nodes/"$node".json.incr.tmpl nodes/"$node".json
+	fi
+
+	# Run knife solo finally.
+	knife solo cook $user@$node -i $secrets
+	popd 1>/dev/null
+}
+
+##############################################################
+# peco
+#
+# \C-g :	Incremental history search with peco
+# \C-r :	Original reverse history search
+# \C-x g :	cd (change directory) under /root/priv wich peco
+# \C-x j :	cd (change directory) with peco history search
+#
+_replace_by_history() {
+    # READLINE_LINE stores current command line.
+    # READLINE_POINT stores current position of cursor
+    local l=$(HISTTIMEFORMAT='' history | tac | sed -e 's/^\s*[0-9]*    \+\s\+//' | peco --query "$READLINE_LINE")
+    READLINE_LINE=${l//^\s*[0-9]*\s*/}
+    READLINE_POINT=${#l}
+}
+# C-g tracks history with peco.
+bind -x '"\C-g": _replace_by_history'
+# the original search history with C-r
+bind    '"\C-r": reverse-search-history'
+
+_select_gitdir() {
+    find ~/priv/git -maxdepth 3 -type d -a -name '.git' | \
+    sed -e 's@/.git@/@' | \
+	peco
+}
+
+_cd_gitdir() {
+    dirs -c
+    pushd "$(_select_gitdir)"
+}
+bind    '"\C-xg": "_cd_gitdir\n"'
+
+. ~/cdhist.sh
+_cd_cdhist() {
+		cd "$(for i in "${CDHIST_CDQ[@]}"; do echo "$i"; done | peco)"
+}
+bind    '"\C-xj": "_cd_cdhist\n"'
+
+_readline_test() {
+		local number_pos=$(expr index $READLINE_LINE "\(0123456789\)")
+		READLINE_POINT=${#number_pos}
+#	{
+#		echo "LINE=$READLINE_LINE"		# READLINE_LINE: 現在のコマンド行の内容
+#		echo "POINT=$READLINE_POINT"	# READLINE_POINT: カーソルの位置
+#	} >&2
+}
+bind -x '"\C-xx":_readline_test'
+
+##############################################################
+# history
+#
+function share_history {
+    history -a		# .bash_historyに前回コマンドを1行追記
+    history -c		# 端末ローカルの履歴を一旦消去
+    history -r		# .bash_historyから履歴を読み込み直す
+}
+PROMPT_COMMAND='share_history'		# 上記関数をプロンプト毎に自動実施
+shopt -u histappend					# .bash_history追記モードは不要なのでOFFに
+export HISTSIZE=999999				# 履歴の最大保存数を指定
+export HISTFILESIZE=99999			# 最大履歴ファイルサイズ
+# ignoredups(重複するコマンドは記録しない) + ignorespace(空白から始めたコマンドは記録しない)
+export HISTCONTROL=ignoreboth
+export HISTIGNORE="fg*:bg*:history*"	# 履歴保存対象から除外するコマンド
+
+# Run tmux only when
+# tmux isn't running yet
+# && shell has started interactively
+# && it's not a ssh connection
+if [ -z "$TMUX" -a -n "$PS1" -a -z "$SSH_CONNECTION" ]; then
+	cmd="tmux"
+	which "$cmd" >/dev/null 2>/dev/null
+	ret=$?
+	if [ $ret -eq 0 ]; then
+		if [ "$(which "$cmd")" != "$cmd" ]; then
+			cmd=$(which "$cmd")
+		fi
+		$cmd
+	fi
+fi
+
+##############################################################
+# Tools for MV gatekeeper work.
+#
+
+# Create limb of the kernel version specified.
+function new-limb {
+	VER=$1
+	if [ "$VER" = "" ]; then
+		echo "Please specify kernel version."
+		echo "2.6.xy:   xy"
+		echo "3.z:      3.z"
+		return 1
+	fi
+	if [[ ! "$VER" =~ ^3\.[0-9]$ ]]; then
+		# linux-2.6.xy
+		VER="2.6."$VER
+	fi
+	git limb mvl-$VER origin/mvl-$VER
+	git checkout mvl-$VER/common
+}
+
+# Delete limb of the kernel version specified.
+function del-limb {
+	VER=$1
+	if [ "$VER" = "" ]; then
+		echo "Please specify kernel version."
+		echo "2.6.xy:   xy"
+		echo "3.z:      3.z"
+		return 1
+	fi
+	if [[ ! "$VER" =~ ^3\.[0-9]$ ]]; then
+		# linux-2.6.xy
+		VER="2.6."$VER
+	fi
+	for br in $(git branch | grep "mvl-"$VER | sed -e 's/^ *//'); do
+		git branch -D $br
+	done
+}
+
+# Set up bug# directory, git pull, git gate
+function gk-setup {
+	BUGID=$1
+	BUGDIR=/root/work/git/01-GATEKEEPER/$BUGID
+	if [ -d $BUGDIR ]; then
+		echo "Directory already exists."
+		return 1
+	fi
+	gk setup "$BUGID"
+	cd $BUGDIR
+	VER=$(git branch -a | egrep "bugfixes/$BUGID" | cut -d "/" -f 3 | uniq | sed -e 's/mvl-//')
+	gk gate "$VER"
+}

@@ -1,0 +1,183 @@
+filetype off	" FIXME
+filetype plugin indent off " FIXME
+
+"---------------------------------------------------------------
+" release autogroup in MyAutoCmd FIXME
+augroup MyAutoCmd
+	autocmd!
+augroup END
+
+" text search
+set ignorecase	" Ignore case when running search
+set smartcase	" Identify case only when search characters include upper case
+set incsearch	" Make searched strings hit with input characters incrementally
+set hlsearch	" Highlight matched text in search
+set listchars=eol:$,trail:-,nbsp:%	" Special characters of 'set list' FIXME
+set diffopt=vertical	" FIXME
+" Escape / and ? automatically. Useful for search
+cnoremap <expr> / getcmdtype() == '/' ? '\/' : '/'
+cnoremap <expr> ? getcmdtype() == '?' ? '\?' : '?'
+
+" Y as yank to the end of line
+nnoremap Y y$
+
+set display=lastline	" FIXME
+set showmatch	" Show corresponding bracket
+set matchtime=1	" Set time that showmatch makes brackets
+set matchpairs+=「:」,『:』,｛:｝,（:）	" Add 2 byte brackets to showmatch
+" + as increment and - as decrement
+nnoremap + <C-a>
+nnoremap - <C-x>
+
+" cscope settings
+if has('cscope') && filereadable('/usr/bin/cscope')
+   nnoremap <C-\>s :cs find s <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-\>g :cs find g <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-\>c :cs find c <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-\>t :cs find t <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-\>e :cs find e <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-\>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
+   nnoremap <C-\>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+   nnoremap <C-\>d :cs find d <C-R>=expand("<cword>")<CR><CR>
+
+   nnoremap <C-@>s :scs find s <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@>g :scs find g <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@>c :scs find c <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@>t :scs find t <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@>e :scs find e <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
+   nnoremap <C-@>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+   nnoremap <C-@>d :scs find d <C-R>=expand("<cword>")<CR><CR>
+
+   nnoremap <C-@><C-@>s :vert scs find s <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@><C-@>g :vert scs find g <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@><C-@>c :vert scs find c <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@><C-@>t :vert scs find t <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@><C-@>e :vert scs find e <C-R>=expand("<cword>")<CR><CR>
+   nnoremap <C-@><C-@>f :vert scs find f <C-R>=expand("<cfile>")<CR><CR>
+   nnoremap <C-@><C-@>i :vert scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
+   nnoremap <C-@><C-@>d :vert scs find d <C-R>=expand("<cword>")<CR><CR>
+endif
+
+"--------------------------------------------------------------------
+" dein.vim (moved from NeoBundle)
+"--------------------------------------------------------------------
+" directory where plugins are installed
+let s:dein_dir = expand('~/.cache/dein')
+" directory where dein.vim is installed
+let s:dein_repo_dir = s:dein_dir . '/repos/github.com/Shougo/dein.vim'
+
+" If there dein.vim doesn't exist, install it from GitHub.
+if &runtimepath !~# '/dein.vim'
+	if !isdirectory(s:dein_repo_dir)
+		execute '!git clone https://github.com/Shougo/dein.vim' s:dein_repo_dir
+	endif
+	execute 'set runtimepath^=' . fnamemodify(s:dein_repo_dir, ':p')
+endif
+
+" プラグインリストを収めた TOML ファイル
+" TOML files which has the list of plugins
+let s:toml      = '~/.vim/rc/dein.toml'
+let s:lazy_toml = '~/.vim/rc/dein_lazy.toml'
+
+" 設定開始
+" dein#load_state() - save_state() の中で begin()-end() しなければならない
+" begin()-end() must be done between dein#load_state() and dein#save_state().
+if dein#load_state(s:dein_dir)
+	call dein#begin(s:dein_dir)
+	call dein#load_toml(s:toml     , {'lazy': 0})
+	call dein#load_toml(s:lazy_toml, {'lazy': 1})
+	" Load local plugins from
+	"call dein#local("~/.vim/dein_local")
+	call dein#end()
+	call dein#save_state()
+endif
+
+" Run install() if there's plugin to be installed.
+if dein#check_install()
+	call dein#install()
+endif
+
+" Plugin configurations
+
+" thinca/vim-quickrun
+let g:quickrun_config={'*': {'split': 'vertical'}}
+
+" rhysd/vim-clang-format
+let g:clang_format#style_options = {
+\   "BasedOnStyle": "LLVM",
+\   "IndentWidth": 8,
+\   "UseTab": "Always",
+\   "BreakBeforeBraces": "Linux",
+\   "AlwaysBreakBeforeMultilineStrings": "true",
+\   "AllowShortIfStatementsOnASingleLine": "false",
+\   "AllowShortLoopsOnASingleLine": "false",
+\   "AllowShortFunctionsOnASingleLine": "false",
+\   "IndentCaseLabels": "false",
+\   "AlignEscapedNewlinesLeft": "false",
+\   "AlignTrailingComments": "true",
+\   "AllowAllParametersOfDeclarationOnNextLine": "false",
+\   "AlignAfterOpenBracket": "true",
+\   "SpaceAfterCStyleCast": "false",
+\   "MaxEmptyLinesToKeep": 2,
+\   "BreakBeforeBinaryOperators": "NonAssignment",
+\   "BreakStringLiterals": "false",
+\   "SortIncludes": "false",
+\   "BreakConstructorInitializersStyle": "BeforeColon",
+\   "ContinuationIndentWidth": 8}
+autocmd FileType c,cpp,objc nnoremap <buffer><Leader>cf :<C-u>ClangFormat<CR>
+autocmd FileType c,cpp,objc vnoremap <buffer><Leader>cf :ClangFormat<CR>
+autocmd FileType c,cpp,objc map <buffer><Leader>x <Plug>(operator-clang-format)
+
+" nvie/vim-flake8'
+" config is located ~/.config/flake8
+autocmd MyAutoCmd BufWrite *.py :call flake8#Flake8()
+
+" nathanaelkane/vim-indent-guides
+let g:indent_guides_auto_colors = 0
+autocmd VimEnter,Colorscheme * :hi IndentGuidesOdd  ctermbg=darkgrey
+autocmd VimEnter,Colorscheme * :hi IndentGuidesEven ctermbg=darkgrey
+let g:indent_guides_enable_on_vim_startup=1
+let g:indent_guides_guide_size=1
+
+" thinca/vim-template
+autocmd MyAutoCmd User plugin-template-loaded
+    \   if search('<+CURSOR+>')
+    \ |     silent! execute 'normal! "_da>'
+    \ | endif
+
+" scrooloose/nerdtree
+nnoremap <f2> :NERDTreeToggle<CR>
+
+" kannokanno/previm
+autocmd MyAutoCmd BufNewFile,BufRead *.{md,mdwn,mkd,mkdn,mark*} set filetype=markdown
+augroup PrevimSettings
+    autocmd!
+    autocmd BufNewFile,BufRead *.{md,mdwn,mkd,mkdn,mark*} set filetype=markdown
+augroup END
+" Use chromium.
+let g:previm_open_cmd = 'google-chrome --user-data-dir --new-window -no-sandbox'
+nnoremap <silent> <F7> :PrevimOpen<CR>
+
+" rcmdnk/vim-markdown
+nnoremap <silent> <Space>f :set foldenable
+nnoremap <silent> <Space>w :set nofoldenable
+
+" vim-go
+let g:go_highlight_functions = 1
+let g:go_highlight_methods = 1
+let g:go_highlight_structs = 1
+
+" emmet.vim
+autocmd FileType html,htmldjango,css,scss EmmetInstall
+let g:user_emmet_leader_key='<C-e>'
+let g:user_emmet_settings = {
+\   'variables' : {
+\       'lang' : 'ja'
+\   }
+\}
+
+" This must be the end.
+colorscheme ron
+syntax on
+filetype plugin indent on

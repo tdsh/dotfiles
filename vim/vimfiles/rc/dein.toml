@@ -1,0 +1,34 @@
+# 基本はgithub.comのレポジトリーを指定するだけ
+[[plugins]]
+repo = 'Shougo/dein.vim'
+
+[[plugins]]
+repo = 'Shougo/vimproc.vim'
+build = 'make'
+
+[[plugins]]
+repo = 'tomasr/molokai'
+
+[[plugins]]
+repo = 'nathanaelkane/vim-indent-guides'
+
+[[plugins]]
+repo = 'thinca/vim-quickrun'
+
+[[plugins]]
+repo = 'thinca/vim-template'
+
+[[plugins]]
+repo = 'scrooloose/nerdtree'
+
+[[plugins]]
+repo = 'terryma/vim-multiple-cursors'
+
+[[plugins]]
+repo = 'ConradIrwin/vim-bracketed-paste'
+
+[[plugins]]
+repo = 'powerman/vim-plugin-AnsiEsc'
+
+[[plugins]]
+repo = 'tpope/vim-surround'

@@ -1,0 +1,64 @@
+# dein_lazy.toml
+[[plugins]]
+repo = 'rhysd/vim-clang-format'
+on_ft = ['c', 'cpp', 'h', 'objc']
+
+[[plugins]]
+repo = 'kana/vim-operator-user'
+on_source = ['rhysd/vim-clang-format']
+
+[[plugins]]
+repo = 'fatih/vim-go'
+on_ft = ['go']
+
+[[plugins]]
+repo = 'vim-scripts/python.vim'
+on_ft = ['py']
+
+[[plugins]]
+repo = 'nvie/vim-flake8'
+on_ft = ['py']
+
+[[plugins]]
+repo = 'hynek/vim-python-pep8-indent'
+on_ft = ['py']
+
+[[plugins]]
+repo = 'vim-scripts/rails.vim'
+on_ft = ['ruby']
+
+[[plugins]]
+repo = 'kannokanno/previm'
+on_ft = ['markdown']
+
+[[plugins]]
+repo = 'vim-scripts/vim-auto-save'
+on_source = ['kannokanno/previm']
+
+[[plugins]]
+repo = 'kana/vim-submode'
+on_source = ['kannokanno/previm']
+
+[[plugins]]
+repo = 'rcmdnk/vim-markdown'
+on_ft = ['markdown']
+
+[[plugins]]
+repo      = 'godlygeek/tabular'
+on_source = ['rcmdnk/vim-markdown']
+
+[[plugins]]
+repo = 'stephpy/vim-yaml'
+on_ft = ['yml', 'yaml']
+
+[[plugins]]
+repo = 'jiangmiao/simple-javascript-indenter'
+on_ft = ['html', 'js', 'php']
+
+[[plugins]]
+repo = 'mattn/emmet-vim'
+on_ft = ['html', 'xml', 'css', 'tpl']
+
+[[plugins]]
+repo = 'jason0x43/vim-js-indent'
+on_ft = ['javascript', 'typescript', 'html', 'tpl']
